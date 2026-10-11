@@ -10,15 +10,16 @@ ENV_FILE="$APP_DIR/.env"
 CLI_CONF="/etc/marzban-cli.conf"
 LOG_INSTALL="/tmp/marzban-install.log"
 
-URL_XRAY_CONFIG="https://upfile.autsc.my.id/download/BQACAgUAAxkDAAIHlGrD1PW__JMaQSH3wyiE9d3_ZJaSAAJsIQACNpwhVhcP1Ym4PsruPQQ/xray_config.json"
+GH_TOKEN="${2:-}"
+URL_XRAY_CONFIG="https://raw.githubusercontent.com/smptxxx/mzb-tools/main/xray_config.json"
 
-URL_CONFIG_PY="https://upfile.autsc.my.id/download/BQACAgUAAxkDAAIHlmrD1RJJ3VeXCn8AAbWO_4Yl9Y5aFgACbiEAAjacIVZrP-X1Y9x8UD0E/config.py"
+URL_CONFIG_PY="https://raw.githubusercontent.com/smptxxx/mzb-tools/main/config.py"
 
-URL_PACKAGE="https://upfile.autsc.my.id/download/BQACAgUAAxkDAAIHomrLIsZ-LtB5fltprwhjtyrHBFydAAKZNAACPhBZVgVWksI9VIf6PQQ/menu%20(1).zip"
+URL_PACKAGE="https://raw.githubusercontent.com/smptxxx/mzb-tools/main/mzb-tools.zip"
 
-URL_WSSSH="https://upfile.autsc.my.id/download/BQACAgUAAxkDAAIHlWrD1P9kUbtn94zdDwzJxv_CFqtEAAJtIQACNpwhVud4mm7zNYG4PQQ/ws-ssh.py"
+URL_WSSSH="https://raw.githubusercontent.com/smptxxx/mzb-tools/main/ws-ssh.py"
 
-URL_TEMPLATE="https://upfile.autsc.my.id/download/BQACAgUAAxkDAAIHn2rHCVfDtZEIFpdV2gtMio9Al1IrAAJ1JQACYs05Vsw83kYJFKgPPQQ/index.html"
+URL_TEMPLATE="https://raw.githubusercontent.com/smptxxx/mzb-tools/main/index.html"
 
 DROPBEAR_VERSION="2019.78"
 DROPBEAR_BIN="/usr/local/sbin/dropbear"
@@ -36,7 +37,7 @@ need_cmd() {
 }
 
 fetch() {
-  curl -fsSL "$1" -o "$2" || die "Gagal unduh $1"
+  curl -fsSL -H "Authorization: token $GH_TOKEN" "$1" -o "$2" || die "Gagal unduh $1"
 }
 
 [ "$EUID" -eq 0 ] || die "Jalankan sebagai root"
@@ -49,6 +50,7 @@ if [ -z "$DOMAIN" ]; then
   read -rp "Masukkan domain (sudah diarahkan ke IP VPS): " DOMAIN < /dev/tty
 fi
 [ -n "$DOMAIN" ] || die "Domain wajib diisi"
+[ -n "$GH_TOKEN" ] || die "Token GitHub wajib. Jalankan: bash install.sh <domain> <ghp_token>"
 
 log "[1/6] Install Marzban"
 
@@ -318,7 +320,7 @@ set_env XRAY_SUBSCRIPTION_URL_PREFIX "https://$DOMAIN"
 
 mkdir -p "$DATA_DIR/templates/subscription"
 
-wget -q -N -P "$DATA_DIR/templates/subscription/" "$URL_TEMPLATE"
+wget -q -N --header="Authorization: token $GH_TOKEN" -P "$DATA_DIR/templates/subscription/" "$URL_TEMPLATE"
 
 set_env CUSTOM_TEMPLATES_DIRECTORY "/var/lib/marzban/templates/"
 set_env SUBSCRIPTION_PAGE_TEMPLATE "subscription/index.html"
