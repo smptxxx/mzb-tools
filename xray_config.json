@@ -1,0 +1,273 @@
+{
+  "log": {
+    "loglevel": "warning",
+    "access": "/var/lib/marzban/access.log"
+  },
+  "routing": {
+    "rules": [
+      {
+        "ip": [
+          "geoip:private"
+        ],
+        "outboundTag": "BLOCK",
+        "type": "field"
+      }
+    ]
+  },
+  "inbounds": [
+    {
+      "tag": "VLESS TCP TLS 443",
+      "listen": "0.0.0.0",
+      "port": 443,
+      "protocol": "vless",
+      "settings": {
+        "clients": [],
+        "decryption": "none",
+        "fallbacks": [
+          {
+            "path": "/vless-ws",
+            "dest": "/dev/shm/vless-ws-443.sock",
+            "xver": 1
+          },
+          {
+            "path": "/vmess-ws",
+            "dest": "/dev/shm/vmess-ws-443.sock",
+            "xver": 1
+          },
+          {
+            "path": "/trojan-ws",
+            "dest": "/dev/shm/trojan-ws-443.sock",
+            "xver": 1
+          },
+          {
+            "path": "/ss-ws",
+            "dest": "/dev/shm/shadowsocks-ws-443.sock",
+            "xver": 1
+          },
+          {
+            "path": "/ssh-ws",
+            "dest": "127.0.0.1:10015",
+            "xver": 0
+          },
+          {
+            "path": "/",
+            "dest": "127.0.0.1:10015",
+            "xver": 0
+          },
+          {
+            "dest": "127.0.0.1:8000",
+            "xver": 0
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "tls",
+        "tlsSettings": {
+          "certificates": [
+            {
+              "certificateFile": "/var/lib/marzban/certs/fullchain.pem",
+              "keyFile": "/var/lib/marzban/certs/key.pem"
+            }
+          ],
+          "alpn": [
+            "http/1.1"
+          ],
+          "minVersion": "1.2"
+        }
+      }
+    },
+    {
+      "tag": "VLESS WS 443",
+      "listen": "/dev/shm/vless-ws-443.sock,0666",
+      "protocol": "vless",
+      "settings": {
+        "clients": [],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "none",
+        "wsSettings": {
+          "path": "/vless-ws",
+          "acceptProxyProtocol": true
+        }
+      }
+    },
+    {
+      "tag": "VMess WS 443",
+      "listen": "/dev/shm/vmess-ws-443.sock,0666",
+      "protocol": "vmess",
+      "settings": {
+        "clients": []
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "none",
+        "wsSettings": {
+          "path": "/vmess-ws",
+          "acceptProxyProtocol": true
+        }
+      }
+    },
+    {
+      "tag": "Trojan WS 443",
+      "listen": "/dev/shm/trojan-ws-443.sock,0666",
+      "protocol": "trojan",
+      "settings": {
+        "clients": []
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "none",
+        "wsSettings": {
+          "path": "/trojan-ws",
+          "acceptProxyProtocol": true
+        }
+      }
+    },
+    {
+      "tag": "Shadowsocks WS 443",
+      "listen": "/dev/shm/shadowsocks-ws-443.sock,0666",
+      "protocol": "shadowsocks",
+      "settings": {
+        "clients": [],
+        "network": "tcp,udp"
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "none",
+        "wsSettings": {
+          "path": "/ss-ws",
+          "acceptProxyProtocol": true
+        }
+      }
+    },
+    {
+      "tag": "VLESS TCP 80",
+      "listen": "0.0.0.0",
+      "port": 80,
+      "protocol": "vless",
+      "settings": {
+        "clients": [],
+        "decryption": "none",
+        "fallbacks": [
+          {
+            "path": "/vless-ws",
+            "dest": "/dev/shm/vless-ws-80.sock",
+            "xver": 1
+          },
+          {
+            "path": "/vmess-ws",
+            "dest": "/dev/shm/vmess-ws-80.sock",
+            "xver": 1
+          },
+          {
+            "path": "/trojan-ws",
+            "dest": "/dev/shm/trojan-ws-80.sock",
+            "xver": 1
+          },
+          {
+            "path": "/ss-ws",
+            "dest": "/dev/shm/shadowsocks-ws-80.sock",
+            "xver": 1
+          },
+          {
+            "path": "/ssh-ws",
+            "dest": "127.0.0.1:10015",
+            "xver": 0
+          },
+          {
+            "path": "/",
+            "dest": "127.0.0.1:10015",
+            "xver": 0
+          },
+          {
+            "dest": "127.0.0.1:10015",
+            "xver": 0
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "none"
+      }
+    },
+    {
+      "tag": "VLESS WS 80",
+      "listen": "/dev/shm/vless-ws-80.sock,0666",
+      "protocol": "vless",
+      "settings": {
+        "clients": [],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "none",
+        "wsSettings": {
+          "path": "/vless-ws",
+          "acceptProxyProtocol": true
+        }
+      }
+    },
+    {
+      "tag": "VMess WS 80",
+      "listen": "/dev/shm/vmess-ws-80.sock,0666",
+      "protocol": "vmess",
+      "settings": {
+        "clients": []
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "none",
+        "wsSettings": {
+          "path": "/vmess-ws",
+          "acceptProxyProtocol": true
+        }
+      }
+    },
+    {
+      "tag": "Trojan WS 80",
+      "listen": "/dev/shm/trojan-ws-80.sock,0666",
+      "protocol": "trojan",
+      "settings": {
+        "clients": []
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "none",
+        "wsSettings": {
+          "path": "/trojan-ws",
+          "acceptProxyProtocol": true
+        }
+      }
+    },
+    {
+      "tag": "Shadowsocks WS 80",
+      "listen": "/dev/shm/shadowsocks-ws-80.sock,0666",
+      "protocol": "shadowsocks",
+      "settings": {
+        "clients": [],
+        "network": "tcp,udp"
+      },
+      "streamSettings": {
+        "network": "ws",
+        "security": "none",
+        "wsSettings": {
+          "path": "/ss-ws",
+          "acceptProxyProtocol": true
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "tag": "DIRECT"
+    },
+    {
+      "protocol": "blackhole",
+      "tag": "BLOCK"
+    }
+  ]
+}
