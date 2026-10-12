@@ -2923,6 +2923,5 @@ case "$ACTION" in
     backupmenu) cmd_backupmenu ;;
     backup_now) cmd_backup_now ;;
     restore)    cmd_restore "$ARG1" ;;
-    setdomain)  cmd_setdomain ;;
     *)          mainmenu ;;
 esac
