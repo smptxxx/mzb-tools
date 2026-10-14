@@ -18,8 +18,8 @@
         const expireDateInit = "{% if user.status.value == 'on_hold' %}-{% elif not user.expire %}∞{% else %}{% set current_timestamp = now().timestamp() %}{{ user.expire | datetime }}{% endif %}";
         var tmpUsage = ( ( parseFloat( dataUsed ) / parseFloat( dataLimit ) ) * 100 ).toFixed( 2 );
         if ( tmpUsage > 100 ) tmpUsage = 100;
-        const dataUsage = dataLimit == "∞" ? 100 : tmpUsage;
-        const dataChartColor = dataUsage < 40 ? "bg-green-600" : dataUsage < 80 ? "bg-yellow-600" : "bg-red-500";
+        const dataUsage = dataLimit == "∞" ? 0 : tmpUsage;
+        const dataChartColor = dataLimit == "∞" ? "bg-green-600" : (dataUsage < 40 ? "bg-green-600" : dataUsage < 80 ? "bg-yellow-600" : "bg-red-500");
         const resetInterval = "{{ user.data_limit_reset_strategy.value }}";
         let expireDateVar = expireDateInit.includes( "∞" ) ? "∞" : localStorage.getItem( "lang" ) == "fa" ? new Date( expireDateInit ).toLocaleString( "fa-IR-u-nu-latn" ).replace( ",", " " ) : expireDateInit;
         let appsJson = {

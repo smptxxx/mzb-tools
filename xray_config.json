@@ -50,13 +50,58 @@
             "xver": 0
           },
           {
+            "path": "/apix",
+            "dest": "127.0.0.1:8901",
+            "xver": 0
+          },
+          {
             "path": "/",
             "dest": "127.0.0.1:10015",
             "xver": 0
           },
           {
-            "dest": "127.0.0.1:8000",
+            "dest": "127.0.0.1:8901",
             "xver": 0
+          },
+          {
+            "path": "/vless-hu",
+            "dest": "/dev/shm/vless-hu-443.sock",
+            "xver": 1
+          },
+          {
+            "path": "/vmess-hu",
+            "dest": "/dev/shm/vmess-hu-443.sock",
+            "xver": 1
+          },
+          {
+            "path": "/trojan-hu",
+            "dest": "/dev/shm/trojan-hu-443.sock",
+            "xver": 1
+          },
+          {
+            "path": "/shadowsocks-hu",
+            "dest": "/dev/shm/shadowsocks-hu-443.sock",
+            "xver": 1
+          },
+          {
+            "path": "/vless-xh",
+            "dest": "/dev/shm/vless-xh-443.sock",
+            "xver": 1
+          },
+          {
+            "path": "/vmess-xh",
+            "dest": "/dev/shm/vmess-xh-443.sock",
+            "xver": 1
+          },
+          {
+            "path": "/trojan-xh",
+            "dest": "/dev/shm/trojan-xh-443.sock",
+            "xver": 1
+          },
+          {
+            "path": "/shadowsocks-xh",
+            "dest": "/dev/shm/shadowsocks-xh-443.sock",
+            "xver": 1
           }
         ]
       },
@@ -185,6 +230,46 @@
           {
             "dest": "127.0.0.1:10015",
             "xver": 0
+          },
+          {
+            "path": "/vless-hu",
+            "dest": "/dev/shm/vless-hu-80.sock",
+            "xver": 1
+          },
+          {
+            "path": "/vmess-hu",
+            "dest": "/dev/shm/vmess-hu-80.sock",
+            "xver": 1
+          },
+          {
+            "path": "/trojan-hu",
+            "dest": "/dev/shm/trojan-hu-80.sock",
+            "xver": 1
+          },
+          {
+            "path": "/shadowsocks-hu",
+            "dest": "/dev/shm/shadowsocks-hu-80.sock",
+            "xver": 1
+          },
+          {
+            "path": "/vless-xh",
+            "dest": "/dev/shm/vless-xh-80.sock",
+            "xver": 1
+          },
+          {
+            "path": "/vmess-xh",
+            "dest": "/dev/shm/vmess-xh-80.sock",
+            "xver": 1
+          },
+          {
+            "path": "/trojan-xh",
+            "dest": "/dev/shm/trojan-xh-80.sock",
+            "xver": 1
+          },
+          {
+            "path": "/shadowsocks-xh",
+            "dest": "/dev/shm/shadowsocks-xh-80.sock",
+            "xver": 1
           }
         ]
       },
@@ -255,6 +340,146 @@
         "security": "none",
         "wsSettings": {
           "path": "/ss-ws",
+          "acceptProxyProtocol": true
+        }
+      }
+    },
+    {
+      "tag": "VLESS HU 443",
+      "listen": "/dev/shm/vless-hu-443.sock,0666",
+      "protocol": "vless",
+      "settings": {
+        "clients": [],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "httpupgrade",
+        "security": "none",
+        "httpupgradeSettings": {
+          "path": "/vless-hu",
+          "host": "scbagus.nexusdev.my.id",
+          "acceptProxyProtocol": true
+        }
+      }
+    },
+    {
+      "tag": "VMess HU 443",
+      "listen": "/dev/shm/vmess-hu-443.sock,0666",
+      "protocol": "vmess",
+      "settings": {
+        "clients": []
+      },
+      "streamSettings": {
+        "network": "httpupgrade",
+        "security": "none",
+        "httpupgradeSettings": {
+          "path": "/vmess-hu",
+          "host": "scbagus.nexusdev.my.id",
+          "acceptProxyProtocol": true
+        }
+      }
+    },
+    {
+      "tag": "Trojan HU 443",
+      "listen": "/dev/shm/trojan-hu-443.sock,0666",
+      "protocol": "trojan",
+      "settings": {
+        "clients": []
+      },
+      "streamSettings": {
+        "network": "httpupgrade",
+        "security": "none",
+        "httpupgradeSettings": {
+          "path": "/trojan-hu",
+          "host": "scbagus.nexusdev.my.id",
+          "acceptProxyProtocol": true
+        }
+      }
+    },
+    {
+      "tag": "Shadowsocks HU 443",
+      "listen": "/dev/shm/shadowsocks-hu-443.sock,0666",
+      "protocol": "shadowsocks",
+      "settings": {
+        "method": "chacha20-ietf-poly1305",
+        "network": "tcp,udp"
+      },
+      "streamSettings": {
+        "network": "httpupgrade",
+        "security": "none",
+        "httpupgradeSettings": {
+          "path": "/shadowsocks-hu",
+          "host": "scbagus.nexusdev.my.id",
+          "acceptProxyProtocol": true
+        }
+      }
+    },
+    {
+      "tag": "VLESS HU 80",
+      "listen": "/dev/shm/vless-hu-80.sock,0666",
+      "protocol": "vless",
+      "settings": {
+        "clients": [],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "httpupgrade",
+        "security": "none",
+        "httpupgradeSettings": {
+          "path": "/vless-hu",
+          "host": "scbagus.nexusdev.my.id",
+          "acceptProxyProtocol": true
+        }
+      }
+    },
+    {
+      "tag": "VMess HU 80",
+      "listen": "/dev/shm/vmess-hu-80.sock,0666",
+      "protocol": "vmess",
+      "settings": {
+        "clients": []
+      },
+      "streamSettings": {
+        "network": "httpupgrade",
+        "security": "none",
+        "httpupgradeSettings": {
+          "path": "/vmess-hu",
+          "host": "scbagus.nexusdev.my.id",
+          "acceptProxyProtocol": true
+        }
+      }
+    },
+    {
+      "tag": "Trojan HU 80",
+      "listen": "/dev/shm/trojan-hu-80.sock,0666",
+      "protocol": "trojan",
+      "settings": {
+        "clients": []
+      },
+      "streamSettings": {
+        "network": "httpupgrade",
+        "security": "none",
+        "httpupgradeSettings": {
+          "path": "/trojan-hu",
+          "host": "scbagus.nexusdev.my.id",
+          "acceptProxyProtocol": true
+        }
+      }
+    },
+    {
+      "tag": "Shadowsocks HU 80",
+      "listen": "/dev/shm/shadowsocks-hu-80.sock,0666",
+      "protocol": "shadowsocks",
+      "settings": {
+        "method": "chacha20-ietf-poly1305",
+        "network": "tcp,udp"
+      },
+      "streamSettings": {
+        "network": "httpupgrade",
+        "security": "none",
+        "httpupgradeSettings": {
+          "path": "/shadowsocks-hu",
+          "host": "scbagus.nexusdev.my.id",
           "acceptProxyProtocol": true
         }
       }
