@@ -21,6 +21,7 @@ URL_TEMPLATE="$GH_RAW/index.html"
 URL_APIX="$GH_RAW/apix/app.py"
 URL_APIX_SERVICE="$GH_RAW/apix/apix.service"
 URL_APIX_INJECT="$GH_RAW/apix/apix-inject.js"
+URL_SETUP_HOSTS="$GH_RAW/apix/setup_hosts.py"
 
 DROPBEAR_VERSION="2019.78"
 DROPBEAR_BIN="/usr/local/sbin/dropbear"
@@ -364,6 +365,7 @@ mkdir -p "$DATA_DIR/apix"
 fetch "$URL_APIX" "$DATA_DIR/apix/app.py"
 fetch "$URL_APIX_SERVICE" "/etc/systemd/system/apix.service"
 fetch "$URL_APIX_INJECT" "$DATA_DIR/apix/apix-inject.js"
+fetch "$GH_RAW/apix/setup_hosts.py" "$DATA_DIR/apix/setup_hosts.py"
 
 sed -i "s|Environment=MZB_ADMIN_USER=.*|Environment=MZB_ADMIN_USER=$ADMIN_USER|" /etc/systemd/system/apix.service 2>/dev/null || true
 
@@ -497,6 +499,13 @@ if [ -f "$CLI_CONF" ] && grep -q "^ADMIN_PASS=" "$CLI_CONF"; then
     sed -i "/\[Service\]/a Environment=MZB_ADMIN_PASS=$EXISTING_PASS" /etc/systemd/system/apix.service
   systemctl daemon-reload && systemctl restart apix
 fi
+
+# ==== Setup hosts (domain + remark TLS/NoTLS otomatis) ====
+log "Setup hosts (address domain + remark TLS/NoTLS)"
+fetch "$URL_SETUP_HOSTS" /tmp/setup_hosts.py
+docker cp /tmp/setup_hosts.py marzban-marzban-1:/tmp/setup_hosts.py
+docker exec marzban-marzban-1 python3 /tmp/setup_hosts.py
+docker restart marzban-marzban-1 >/dev/null && sleep 8
 
 echo
 echo "Selesai."
