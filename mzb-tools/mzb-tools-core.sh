@@ -295,13 +295,13 @@ set_proto() {
     case "$1" in
         ws)
             PROTO="vmess"; TITLE="VMESS"; PATHW="/vmess-ws"
-            TAGS='"VMess WS 443","VMess WS 80"' ;;
+            TAGS='"VMess WS 443","VMess WS 80","VMess HU 443","VMess HU 80"' ;;
         vl)
             PROTO="vless"; TITLE="VLESS"; PATHW="/vless-ws"
-            TAGS='"VLESS WS 443","VLESS WS 80"' ;;
+            TAGS='"VLESS TCP TLS 443","VLESS WS 443","VLESS TCP 80","VLESS WS 80","VLESS HU 443","VLESS HU 80"' ;;
         tr)
             PROTO="trojan"; TITLE="TROJAN"; PATHW="/trojan-ws"
-            TAGS='"Trojan WS 443"' ;;
+            TAGS='"Trojan WS 443","Trojan WS 80","Trojan HU 443","Trojan HU 80"' ;;
     esac
     export PROTO
     PATHENC="${PATHW//\//%2F}"
