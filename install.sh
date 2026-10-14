@@ -393,6 +393,39 @@ docker cp "$DATA_DIR/apix/apix-inject.js" "marzban-marzban-1:$BUILD_DIR/statics/
 docker exec marzban-marzban-1 sh -c "grep -q apix-inject $BUILD_DIR/index.html || sed -i 's#</head>#  <script src=\"/statics/apix-inject.js\" defer></script>\n  </head>#' $BUILD_DIR/index.html"
 docker restart marzban-marzban-1 >/dev/null && sleep 8
 
+# hapus branding Marzban (donasi + github star + footer credit) dari dashboard
+cat > /tmp/strip_brand_container.py <<'STRIP_EOF'
+import json, re, os, glob
+BUILD = None
+for cand in glob.glob("/code/app/dashboard*/build*"):
+    if os.path.exists(cand + "/index.html"):
+        BUILD = cand
+if not BUILD:
+    BUILD = "/code/app/dashboard/build"
+idx = open(f"{BUILD}/index.html", encoding="utf-8").read()
+m = re.search(r'src="/statics/(index\.[a-z0-9]+\.js)"', idx)
+if not m:
+    raise SystemExit(0)
+jsname = m.group(1)
+jsp = f"{BUILD}/statics/{jsname}"
+s = open(jsp, encoding="utf-8").read()
+edits = 0
+mstar = re.search(r',e\(v,\{css:\{direction:"ltr"\}[^\n]*?Star Marzban on GitHub[^\n]*?\)\}\)', s)
+if mstar:
+    s = s.replace(mstar.group(0), "", 1); edits += 1
+s = re.sub(r'children:\[e\(ur,[^\n]*?Made with[^\n]*?Gozargah[^\n]*?\]\)', 'children:""', s, count=1) and (edits += 1) or edits
+s = re.sub(r',e\([A-Za-z_$]+,\{to:[A-Za-z_$]+,[^)]*?Marzban#donation[^\n]*?\)\)', '', s, count=1) and (edits += 1) or edits
+assert s.count("(") == s.count(")") and s.count("{") == s.count("}"), "UNBALANCED"
+newname = re.sub(r"(index\.[a-z0-9]+)(\.js)", r"\1.bosfix\2", jsname)
+open(f"{BUILD}/statics/{newname}", "w", encoding="utf-8").write(s)
+os.remove(jsp)
+open(f"{BUILD}/index.html", "w", encoding="utf-8").write(idx.replace(jsname, newname))
+print(f"branding stripped ({edits} edits)")
+STRIP_EOF
+docker cp /tmp/strip_brand_container.py marzban-marzban-1:/tmp/strip_brand_container.py
+docker exec marzban-marzban-1 python3 /tmp/strip_brand_container.py || warn "branding strip gagal (lanjut)"
+docker restart marzban-marzban-1 >/dev/null && sleep 8
+
 # simpan kredensial utk APIX (password admin anonim diset saat step 7)
 grep -q "MZB_ADMIN_USER" /etc/systemd/system/apix.service || \
   sed -i "/\[Service\]/a Environment=MZB_ADMIN_USER=$ADMIN_TMP_USER" /etc/systemd/system/apix.service
