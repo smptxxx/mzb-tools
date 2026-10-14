@@ -381,15 +381,17 @@ until curl -s -o /dev/null http://127.0.0.1:8000/dashboard/ 2>/dev/null; do
   [ $token_wait -gt 30 ] && break
 done
 
-ADMIN_TMP_USER="${MZB_ADMIN_USER:-$ADMIN_USER}"
-if [ -f "$CLI_CONF" ] && grep -q "ADMIN_USER=" "$CLI_CONF"; then
-  ADMIN_TMP_USER="$(grep '^ADMIN_USER=' "$CLI_CONF" | cut -d= -f2 | tr -d "'\"")"
+# path build dashboard beda-beda antar versi image Marzban - deteksi otomatis
+BUILD_DIR="$(docker exec marzban-marzban-1 sh -c 'dirname $(find /code -name index.html -path "*build*" 2>/dev/null | head -1)' 2>/dev/null || true)"
+if [ -z "$BUILD_DIR" ] || [ "$BUILD_DIR" = "/" ]; then
+  BUILD_DIR="/code/app/dashboard/build"
 fi
+log "Dashboard build dir: $BUILD_DIR"
 
-docker exec marzban-marzban-1 mkdir -p /code/app/dashboard/build/statics 2>/dev/null || true
-docker cp "$DATA_DIR/apix/apix-inject.js" marzban-marzban-1:/code/app/dashboard/build/statics/apix-inject.js
-docker exec marzban-marzban-1 bash -c "cd /code/app/dashboard/build && grep -q apix-inject index.html || sed -i 's#</head>#  <script src=\"/statics/apix-inject.js\" defer></script>\n  </head>#'" index.html 2>/dev/null || \
-docker exec marzban-marzban-1 bash -c "cd /code/app/dashboard/build && grep -q apix-inject index.html || sed -i 's#</head>#  <script src=\"/statics/apix-inject.js\" defer></script>\n  </head>#' index.html"
+docker exec marzban-marzban-1 mkdir -p "$BUILD_DIR/statics"
+docker cp "$DATA_DIR/apix/apix-inject.js" "marzban-marzban-1:$BUILD_DIR/statics/apix-inject.js"
+docker exec marzban-marzban-1 sh -c "grep -q apix-inject $BUILD_DIR/index.html || sed -i 's#</head>#  <script src=\"/statics/apix-inject.js\" defer></script>\n  </head>#' $BUILD_DIR/index.html"
+docker restart marzban-marzban-1 >/dev/null && sleep 8
 
 # simpan kredensial utk APIX (password admin anonim diset saat step 7)
 grep -q "MZB_ADMIN_USER" /etc/systemd/system/apix.service || \
