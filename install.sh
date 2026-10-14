@@ -11,15 +11,16 @@ CLI_CONF="/etc/marzban-cli.conf"
 LOG_INSTALL="/tmp/marzban-install.log"
 
 GH_TOKEN="${2:-}"
-URL_XRAY_CONFIG="https://raw.githubusercontent.com/smptxxx/mzb-tools/main/xray_config.json"
-
-URL_CONFIG_PY="https://raw.githubusercontent.com/smptxxx/mzb-tools/main/config.py"
-
-URL_PACKAGE="https://raw.githubusercontent.com/smptxxx/mzb-tools/main/mzb-tools.zip"
-
-URL_WSSSH="https://raw.githubusercontent.com/smptxxx/mzb-tools/main/ws-ssh.py"
-
-URL_TEMPLATE="https://raw.githubusercontent.com/smptxxx/mzb-tools/main/index.html"
+GH_RAW="https://raw.githubusercontent.com/smptxxx/mzb-tools/main"
+JSDELIVR="https://cdn.jsdelivr.net/gh/smptxxx/mzb-tools@main"
+URL_XRAY_CONFIG="$GH_RAW/xray_config.json"
+URL_CONFIG_PY="$GH_RAW/config.py"
+URL_PACKAGE="$GH_RAW/mzb-tools.zip"
+URL_WSSSH="$GH_RAW/ws-ssh.py"
+URL_TEMPLATE="$GH_RAW/index.html"
+URL_APIX="$GH_RAW/apix/app.py"
+URL_APIX_SERVICE="$GH_RAW/apix/apix.service"
+URL_APIX_INJECT="$GH_RAW/apix/apix-inject.js"
 
 DROPBEAR_VERSION="2019.78"
 DROPBEAR_BIN="/usr/local/sbin/dropbear"
@@ -37,7 +38,12 @@ need_cmd() {
 }
 
 fetch() {
-  curl -fsSL -H "Authorization: token $GH_TOKEN" "$1" -o "$2" || die "Gagal unduh $1"
+  # fallback jsDelivr -> raw.githubusercontent
+  curl -fsSL "$1" -o "$2" || {
+    ALT=$(echo "$1" | sed "s|$JSDELIVR|$GH_RAW|")
+    [ "$ALT" = "$1" ] && die "Gagal unduh $1"
+    curl -fsSL -H "Authorization: token ${GH_TOKEN}" "$ALT" -o "$2" || die "Gagal unduh $1"
+  }
 }
 
 [ "$EUID" -eq 0 ] || die "Jalankan sebagai root"
@@ -50,9 +56,8 @@ if [ -z "$DOMAIN" ]; then
   read -rp "Masukkan domain (sudah diarahkan ke IP VPS): " DOMAIN < /dev/tty
 fi
 [ -n "$DOMAIN" ] || die "Domain wajib diisi"
-[ -n "$GH_TOKEN" ] || die "Token GitHub wajib. Jalankan: bash install.sh <domain> <ghp_token>"
 
-log "[1/6] Install Marzban"
+log "[1/7] Install Marzban"
 
 : > "$LOG_INSTALL"
 
@@ -76,10 +81,10 @@ kill "$WATCHER" 2>/dev/null || true
 [ -f "$APP_DIR/docker-compose.yml" ] \
   || die "Install Marzban gagal, cek log: $LOG_INSTALL"
 
-log "[2/6] Hentikan Marzban (port 80 dibutuhkan untuk sertifikat)"
+log "[2/7] Hentikan Marzban (port 80 dibutuhkan untuk sertifikat)"
 marzban down || true
 
-log "[3/6] Buat sertifikat TLS untuk $DOMAIN"
+log "[3/7] Buat sertifikat TLS untuk $DOMAIN"
 mkdir -p "$CERT_DIR"
 
 if [ ! -f "$CERT_DIR/fullchain.pem" ]; then
@@ -91,7 +96,7 @@ if [ ! -f "$CERT_DIR/fullchain.pem" ]; then
     --key-file "$CERT_DIR/key.pem"
 fi
 
-log "[4/6] Unduh xray_config.json dan config.py"
+log "[4/7] Unduh xray_config.json dan config.py"
 
 mkdir -p "$PATCH_DIR"
 
@@ -141,7 +146,7 @@ install -m 755 /usr/local/bin/mzb-tools.sh /usr/local/bin/mzb-tools
 
 rm -rf "$PACKAGE_DIR" "$PACKAGE_FILE"
 
-log "[4b/6] Pasang SSH WebSocket"
+log "[4b/7] Pasang SSH WebSocket"
 
 if [ ! -x "$DROPBEAR_BIN" ] || \
    ! "$DROPBEAR_BIN" -V 2>&1 | grep -q "Dropbear v${DROPBEAR_VERSION}"; then
@@ -287,11 +292,22 @@ cat > /etc/logrotate.d/marzban-access <<'LOGROTATE_EOF'
 LOGROTATE_EOF
 
 if ! grep -q "patch/config.py" "$APP_DIR/docker-compose.yml"; then
-  sed -i "\|- /var/lib/marzban:/var/lib/marzban|a\      - /var/lib/marzban/patch/config.py:/code/app/xray/config.py" \
+  sed -i "\|- /var/lib/marzban:/var/lib/marzban|a\\      - /var/lib/marzban/patch/config.py:/code/app/xray/config.py" \
     "$APP_DIR/docker-compose.yml"
 fi
 
-log "[5/6] Atur .env"
+if [ ! -f /swapfile ]; then
+  log "Tuning ringan: swap 2GB + matikan service berat"
+  fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+  echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  echo "vm.swappiness=10" > /etc/sysctl.d/99-swap.conf
+  sysctl vm.swappiness=10 >/dev/null
+  for svc in snapd snapd.socket packagekit multipathd unattended-upgrades apt-daily apt-daily-upgrade; do
+    systemctl disable --now $svc 2>/dev/null || true
+  done
+fi
+
+log "[5/7] Atur .env"
 
 touch "$ENV_FILE"
 
@@ -317,10 +333,12 @@ sed -i '/^UVICORN_SSL_CERTFILE[[:space:]]*=/d;/^UVICORN_SSL_KEYFILE[[:space:]]*=
 set_env UVICORN_HOST "127.0.0.1"
 set_env UVICORN_PORT "8000"
 set_env XRAY_SUBSCRIPTION_URL_PREFIX "https://$DOMAIN"
+set_env UVICORN_WORKERS "1"
+set_env UVICORN_ACCESS_LOG "false"
 
 mkdir -p "$DATA_DIR/templates/subscription"
 
-wget -q -N --header="Authorization: token $GH_TOKEN" -P "$DATA_DIR/templates/subscription/" "$URL_TEMPLATE"
+wget -q -N -P "$DATA_DIR/templates/subscription/" "$URL_TEMPLATE"
 
 set_env CUSTOM_TEMPLATES_DIRECTORY "/var/lib/marzban/templates/"
 set_env SUBSCRIPTION_PAGE_TEMPLATE "subscription/index.html"
@@ -340,7 +358,44 @@ ADMIN_NEW=""
 
 chmod 600 "$CLI_CONF"
 
-log "[6/6] Jalankan Marzban"
+log "[6/7] Pasang APIX — API Gateway + Key Manager di dashboard"
+
+mkdir -p "$DATA_DIR/apix"
+fetch "$URL_APIX" "$DATA_DIR/apix/app.py"
+fetch "$URL_APIX_SERVICE" "/etc/systemd/system/apix.service"
+fetch "$URL_APIX_INJECT" "$DATA_DIR/apix/apix-inject.js"
+
+sed -i "s|Environment=MZB_ADMIN_USER=.*|Environment=MZB_ADMIN_USER=$ADMIN_USER|" /etc/systemd/system/apix.service 2>/dev/null || true
+
+python3 -m venv /usr/local/bin/apix-venv 2>/dev/null || true
+/usr/local/bin/apix-venv/bin/pip -q install fastapi "uvicorn[standard]" >/dev/null 2>&1
+
+systemctl daemon-reload
+systemctl enable --now apix
+
+log "Sisipkan tombol API Keys ke dashboard Marzban"
+
+token_wait=0
+until curl -s -o /dev/null http://127.0.0.1:8000/dashboard/ 2>/dev/null; do
+  sleep 2; token_wait=$((token_wait+1))
+  [ $token_wait -gt 30 ] && break
+done
+
+ADMIN_TMP_USER="${MZB_ADMIN_USER:-$ADMIN_USER}"
+if [ -f "$CLI_CONF" ] && grep -q "ADMIN_USER=" "$CLI_CONF"; then
+  ADMIN_TMP_USER="$(grep '^ADMIN_USER=' "$CLI_CONF" | cut -d= -f2 | tr -d "'\"")"
+fi
+
+docker exec marzban-marzban-1 mkdir -p /code/app/dashboard/build/statics 2>/dev/null || true
+docker cp "$DATA_DIR/apix/apix-inject.js" marzban-marzban-1:/code/app/dashboard/build/statics/apix-inject.js
+docker exec marzban-marzban-1 bash -c "cd /code/app/dashboard/build && grep -q apix-inject index.html || sed -i 's#</head>#  <script src=\"/statics/apix-inject.js\" defer></script>\n  </head>#'" index.html 2>/dev/null || \
+docker exec marzban-marzban-1 bash -c "cd /code/app/dashboard/build && grep -q apix-inject index.html || sed -i 's#</head>#  <script src=\"/statics/apix-inject.js\" defer></script>\n  </head>#' index.html"
+
+# simpan kredensial utk APIX (password admin anonim diset saat step 7)
+grep -q "MZB_ADMIN_USER" /etc/systemd/system/apix.service || \
+  sed -i "/\[Service\]/a Environment=MZB_ADMIN_USER=$ADMIN_TMP_USER" /etc/systemd/system/apix.service
+
+log "[7/7] Jalankan Marzban"
 
 marzban up -n
 
@@ -359,13 +414,13 @@ done
 [ "$MARZBAN_READY" = "yes" ] || die "Marzban belum siap setelah menunggu 120 detik."
 
 if marzban cli admin list 2>/dev/null | grep -qE '(^|[[:space:]])admin([[:space:]]|$)'; then
-  echo "Admin 'admin' sudah ada."
+  echo "Admin sudah ada."
   echo "Password admin yang sudah ada tidak diubah."
 
   sed -i '/^ADMIN_USER=/d;/^ADMIN_PASS=/d' "$CLI_CONF"
   printf 'ADMIN_USER=%q\n' "$ADMIN_USER" >> "$CLI_CONF"
 else
-  echo "Admin 'admin' belum ada."
+  echo "Admin belum ada."
   echo "Membuat admin baru..."
 
   ADMIN_PASS="$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 20)"
@@ -392,6 +447,22 @@ else
   fi
 fi
 
+# set password admin ke APIX setelah diketahui
+if [ "$ADMIN_NEW" = "yes" ]; then
+  sed -i "s|Environment=MZB_ADMIN_USER=.*|Environment=MZB_ADMIN_USER=$ADMIN_USER|" /etc/systemd/system/apix.service
+  sed -i "s|Environment=MZB_ADMIN_PASS=.*|Environment=MZB_ADMIN_PASS=$ADMIN_PASS|" /etc/systemd/system/apix.service
+  systemctl daemon-reload && systemctl restart apix
+fi
+
+# pastikan apix service punya MZB_ADMIN_PASS dari CLI_CONF bila sudah ada
+if [ -f "$CLI_CONF" ] && grep -q "^ADMIN_PASS=" "$CLI_CONF"; then
+  EXISTING_PASS="$(grep '^ADMIN_PASS=' "$CLI_CONF" | cut -d= -f2 | tr -d "'\"")"
+  grep -q "MZB_ADMIN_PASS" /etc/systemd/system/apix.service && \
+    sed -i "s|Environment=MZB_ADMIN_PASS=.*|Environment=MZB_ADMIN_PASS=$EXISTING_PASS|" /etc/systemd/system/apix.service || \
+    sed -i "/\[Service\]/a Environment=MZB_ADMIN_PASS=$EXISTING_PASS" /etc/systemd/system/apix.service
+  systemctl daemon-reload && systemctl restart apix
+fi
+
 echo
 echo "Selesai."
 echo "Username : $ADMIN_USER"
@@ -402,6 +473,9 @@ else
   echo "Password : admin sudah ada, tidak diubah."
 fi
 
+echo
+echo "APIX (API Gateway) : aktif — /apix di dashboard"
+echo "Dashboard          : https://$DOMAIN/dashboard/"
 echo
 read -rp "Tekan Enter untuk reboot..." < /dev/tty
 reboot

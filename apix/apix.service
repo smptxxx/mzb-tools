@@ -1,0 +1,16 @@
+[Unit]
+Description=APIX Gateway (Marzban API + API Keys)
+After=network.target docker.service
+
+[Service]
+Type=simple
+WorkingDirectory=/var/lib/marzban/apix
+Environment=MZB_ADMIN_USER=admin
+Environment=MZB_ADMIN_PASS=CHANGE_ME
+Environment=MZB_BASE=http://127.0.0.1:8000
+ExecStart=/usr/local/bin/apix-venv/bin/uvicorn app:app --host 127.0.0.1 --port 8901 --workers 1 --no-access-log --app-dir /var/lib/marzban/apix
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
