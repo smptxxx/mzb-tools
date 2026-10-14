@@ -591,42 +591,18 @@ create_account() {
 }
 
 show_account() {
-    local gb="$1" exp_label="$2"
-    clear
-    box_header "PREMIUM $TITLE ACCOUNT"
-    box_top
+    # tampilkan hanya subscription URL (berisi semua varian TLS & NoTLS)
     box_kv "User" "$user"
-    box_kv "Domain" "$DOMAIN"
-    box_kv "Port TLS" "443"
-    [[ "$PROTO" != "trojan" ]] && box_kv "Port NTLS" "80"
-    box_kv "$SECRET_LABEL" "$SECRET"
-    if [[ "$PROTO" == "vmess" ]]; then
-        box_kv "alterId" "0"
-        box_kv "Security" "auto"
-    fi
-    box_kv "Network" "ws"
-    box_kv "Path" "$PATHW"
+    box_kv "Protokol" "$TITLE"
     box_kv "Quota" "$(quota_label "$gb")"
     box_kv "Limit IP" "$(iplimit_label "$IPLIM")"
-    box_mid
-    box_text "Link Websocket TLS :"
-    box_link "$LINK_TLS"
-    if [[ "$PROTO" != "trojan" ]]; then
-        box_mid
-        box_text "Link Websocket NTLS :"
-        box_link "$LINK_NTLS"
-    fi
-    if [[ -n "$SUB_URL" ]]; then
-        box_mid
-        box_text "Subscription :"
-        box_link "$SUB_URL"
-    fi
-    box_mid
     box_kv "Expired Akun" "$exp_label"
+    box_mid
+    box_text "Subscription (semua TLS & NoTLS) :"
+    box_link "$SUB_URL"
     box_bottom
     echo ""
 }
-
 valid_username() {
     [[ "$1" =~ ^[a-zA-Z0-9_]{3,32}$ ]]
 }
